@@ -132,8 +132,8 @@ export function untagArticle(tagId: number, articleId: number) {
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** AI suggestions per article, so reopening the flyout doesn't call the model again. */
-const g = globalThis as unknown as { __rivuletTagAi?: Map<number, string[]> };
-const aiCache = (g.__rivuletTagAi ??= new Map());
+const g = globalThis as unknown as { __stitchTagAi?: Map<number, string[]> };
+const aiCache = (g.__stitchTagAi ??= new Map());
 
 async function aiSuggestions(title: string, text: string, existing: string[]): Promise<string[]> {
   const key = getCredential("openrouterApiKey");
@@ -144,7 +144,7 @@ async function aiSuggestions(title: string, text: string, existing: string[]): P
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
       "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-      "X-Title": "Rivulet",
+      "X-Title": "Stitch",
     },
     body: JSON.stringify({
       model: getSettings().openrouterModel,

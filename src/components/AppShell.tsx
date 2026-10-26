@@ -171,26 +171,26 @@ export function AppShell() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [scope, setScope] = useState<Scope>(scopeFromLocation);
   const [unreadOnly, setUnreadOnly] = useState(() =>
-    readStored("rivulet-unread-only", true),
+    readStored("stitch-unread-only", true),
   );
   const [oldestFirst, setOldestFirst] = useState(() =>
-    readStored("rivulet-oldest-first", false),
+    readStored("stitch-oldest-first", false),
   );
   const [layout, setLayout] = useState<ListLayout>(() =>
-    readStored<ListLayout>("rivulet-layout", "titles"),
+    readStored<ListLayout>("stitch-layout", "titles"),
   );
   const [theme, setTheme] = useState<Theme>(() => {
     const t = document.documentElement.dataset.theme;
     return t === "light" || t === "dark" ? t : "system";
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
-    readStored("rivulet-sidebar-collapsed", false),
+    readStored("stitch-sidebar-collapsed", false),
   );
   const [sidebarWidth, setSidebarWidth] = useState(() =>
-    readStored("rivulet-sidebar-width", 340),
+    readStored("stitch-sidebar-width", 340),
   );
   const [listWidth, setListWidth] = useState(() =>
-    readStored("rivulet-list-width", 380),
+    readStored("stitch-list-width", 380),
   );
   const [navOpen, setNavOpen] = useState(false);
   /** While the nav drawer is dragged by a swipe: how far open it is (0–1). */
@@ -235,12 +235,12 @@ export function AppShell() {
 
   // ---------- persistence ----------
   useEffect(() => {
-    writeStored("rivulet-unread-only", unreadOnly);
-    writeStored("rivulet-oldest-first", oldestFirst);
-    writeStored("rivulet-layout", layout);
-    writeStored("rivulet-sidebar-collapsed", sidebarCollapsed);
-    writeStored("rivulet-sidebar-width", sidebarWidth);
-    writeStored("rivulet-list-width", listWidth);
+    writeStored("stitch-unread-only", unreadOnly);
+    writeStored("stitch-oldest-first", oldestFirst);
+    writeStored("stitch-layout", layout);
+    writeStored("stitch-sidebar-collapsed", sidebarCollapsed);
+    writeStored("stitch-sidebar-width", sidebarWidth);
+    writeStored("stitch-list-width", listWidth);
   }, [
     unreadOnly,
     oldestFirst,
@@ -930,8 +930,8 @@ export function AppShell() {
     setTheme(next);
     applyTheme(next);
     try {
-      if (next === "system") localStorage.removeItem("rivulet-theme");
-      else localStorage.setItem("rivulet-theme", next);
+      if (next === "system") localStorage.removeItem("stitch-theme");
+      else localStorage.setItem("stitch-theme", next);
     } catch {}
   };
 

@@ -7,7 +7,7 @@ export function GET() {
   return new Response(exportOpml(), {
     headers: {
       "Content-Type": "text/x-opml; charset=utf-8",
-      "Content-Disposition": `attachment; filename="rivulet-${date}.opml"`,
+      "Content-Disposition": `attachment; filename="stitch-${date}.opml"`,
     },
   });
 }

@@ -280,7 +280,7 @@ async function sendEmail(to: string, ruleName: string, articles: RuleArticle[], 
   const text =
     shown.map((a) => `${a.title}\n${a.feed_title}${a.url ? `\n${a.url}` : ""}\n${bodyText(a)}`).join("\n\n---\n\n") +
     (articles.length > shown.length ? `\n\n…and ${articles.length - shown.length} more.` : "") +
-    `\n\nSent by the Rivulet rule “${ruleName}”.`;
+    `\n\nSent by the Stitch rule “${ruleName}”.`;
   const html = `<div style="font-family:system-ui,sans-serif;max-width:640px">
 ${shown
   .map(
@@ -292,14 +292,14 @@ ${shown
   )
   .join("\n")}
 ${articles.length > shown.length ? `<p>…and ${articles.length - shown.length} more.</p>` : ""}
-<p style="color:#9a9a97;font-size:12px">Sent by the Rivulet rule “${esc(ruleName)}”.</p></div>`;
+<p style="color:#9a9a97;font-size:12px">Sent by the Stitch rule “${esc(ruleName)}”.</p></div>`;
 
   const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       personalizations: [{ to: [{ email: to }] }],
-      from: { email: from, name: "Rivulet" },
+      from: { email: from, name: "Stitch" },
       subject,
       content: [
         { type: "text/plain", value: text },
@@ -488,7 +488,7 @@ export async function runRulesForNewArticles(feed: { id: number; folder_id: numb
     const failed = results.filter((r) => !r.ok);
     const status = !failed.length ? "sent" : failed.length === results.length ? "failed" : "partial";
     const error = failed.length ? failed.map((f) => `${f.action}: ${f.error}`).join(" | ") : null;
-    if (error) console.error(`[rivulet] rule "${rule.name}" delivery failed: ${error}`);
+    if (error) console.error(`[stitch] rule "${rule.name}" delivery failed: ${error}`);
     const now = Date.now();
     db.transaction(() => {
       for (const a of matched) log.run(rule.id, a.id, a.title, now, status, error);
@@ -549,12 +549,12 @@ export function purgeRuleMatches() {
 export async function sendTestNotification(channel: "email" | "pushover", to?: string): Promise<void> {
   const sample: RuleArticle = {
     id: 0,
-    title: "Rivulet test notification",
+    title: "Stitch test notification",
     url: null,
     author: null,
     content: null,
-    excerpt: "If you can read this, Rivulet can reach you. Rules will deliver new matching articles here.",
-    feed_title: "Rivulet",
+    excerpt: "If you can read this, Stitch can reach you. Rules will deliver new matching articles here.",
+    feed_title: "Stitch",
     published_at: Date.now(),
   };
   if (channel === "email") {

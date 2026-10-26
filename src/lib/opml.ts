@@ -27,7 +27,7 @@ export function exportOpml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <head>
-    <title>Rivulet subscriptions</title>
+    <title>Stitch subscriptions</title>
     <dateCreated>${new Date().toUTCString()}</dateCreated>
   </head>
   <body>

@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Rss } from "lucide-react";
 
-/** The Rivulet mark (same artwork as app/icon.svg): a light stream bending around a pebble. */
+/** The Stitch mark (same artwork as app/icon.svg): a light stream bending around a pebble. */
 export function Logo({ className }: { className?: string }) {
   const clip = useId();
   return (

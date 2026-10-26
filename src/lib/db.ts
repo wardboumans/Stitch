@@ -210,14 +210,14 @@ function migrate(db: Database.Database) {
   let current = db.pragma("user_version", { simple: true }) as number;
   if (current < BASELINE_VERSION) db.pragma(`user_version = ${(current = BASELINE_VERSION)}`);
   if (current > SCHEMA_VERSION)
-    throw new Error(`Database schema version ${current} is newer than this build supports (${SCHEMA_VERSION}); upgrade Rivulet.`);
+    throw new Error(`Database schema version ${current} is newer than this build supports (${SCHEMA_VERSION}); upgrade Stitch.`);
   for (const m of MIGRATIONS) {
     if (m.version <= current) continue;
     db.transaction(() => {
       db.exec(m.sql);
       db.pragma(`user_version = ${m.version}`);
     })();
-    console.log(`[rivulet] migrated database to schema version ${m.version}`);
+    console.log(`[stitch] migrated database to schema version ${m.version}`);
   }
 }
 

@@ -6,12 +6,12 @@ const ui = Public_Sans({ variable: "--font-ui", subsets: ["latin"] });
 const serif = Merriweather({ variable: "--font-serif-body", subsets: ["latin"], weight: ["400", "700"], style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
-  title: "Rivulet",
+  title: "Stitch",
   description: "A self-hosted RSS reader",
 };
 
 // Applies the saved theme before first paint to avoid a flash of the wrong theme.
-const themeScript = `try{var t=localStorage.getItem("rivulet-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+const themeScript = `try{var t=localStorage.getItem("stitch-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

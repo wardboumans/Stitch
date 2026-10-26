@@ -51,7 +51,7 @@ function load(kind: OutputFeedKind, token: string): Source | null {
          WHERE at.tag_id = ? AND a.filtered = 0 ORDER BY at.created_at DESC, a.id DESC LIMIT 50`,
       )
       .all(tag.id) as FeedRow[];
-    return { title: tag.name, description: `Articles tagged “${tag.name}” in Rivulet`, rows };
+    return { title: tag.name, description: `Articles tagged “${tag.name}” in Stitch`, rows };
   }
   const folder = db.prepare("SELECT id, name FROM folders WHERE feed_token = ?").get(token) as { id: number; name: string } | undefined;
   if (!folder) return null;
@@ -64,7 +64,7 @@ function load(kind: OutputFeedKind, token: string): Source | null {
   const feeds = db
     .prepare("SELECT title, feed_url, site_url FROM feeds WHERE folder_id = ? ORDER BY position, title COLLATE NOCASE")
     .all(folder.id) as Source["feeds"];
-  return { title: folder.name, description: `Articles from the “${folder.name}” folder in Rivulet`, rows, feeds };
+  return { title: folder.name, description: `Articles from the “${folder.name}” folder in Stitch`, rows, feeds };
 }
 
 function rss(src: Source, self: string, origin: string): string {
@@ -72,7 +72,7 @@ function rss(src: Source, self: string, origin: string): string {
     .map(
       (r) => `    <item>
       <title>${xml(r.title)}</title>
-${r.url ? `      <link>${xml(r.url)}</link>\n` : ""}      <guid isPermaLink="${r.url ? "true" : "false"}">${xml(r.url ?? `rivulet-article-${r.id}`)}</guid>
+${r.url ? `      <link>${xml(r.url)}</link>\n` : ""}      <guid isPermaLink="${r.url ? "true" : "false"}">${xml(r.url ?? `stitch-article-${r.id}`)}</guid>
       <pubDate>${new Date(r.published_at).toUTCString()}</pubDate>
 ${r.author ? `      <dc:creator>${xml(r.author)}</dc:creator>\n` : ""}      <source url="${xml(self)}">${xml(r.feed_title)}</source>
       <description>${xml(r.content || r.excerpt || "")}</description>
@@ -102,14 +102,14 @@ function jsonFeed(src: Source, self: string, origin: string): string {
       home_page_url: origin,
       feed_url: self,
       items: src.rows.map((r) => ({
-        id: r.url ?? `rivulet-article-${r.id}`,
+        id: r.url ?? `stitch-article-${r.id}`,
         ...(r.url ? { url: r.url } : {}),
         title: r.title,
         content_html: r.content || r.excerpt || "",
         ...(r.excerpt ? { summary: r.excerpt } : {}),
         date_published: new Date(r.published_at).toISOString(),
         ...(r.author ? { authors: [{ name: r.author }] } : {}),
-        _rivulet: { source: r.feed_title },
+        _stitch: { source: r.feed_title },
       })),
     },
     null,
