@@ -1,7 +1,7 @@
 services:
-  rivulet:
-    image: ghcr.io/wardboumans/rivulet:latest
-    container_name: rivulet
+  stitch:
+    image: ghcr.io/wardboumans/stitch:latest
+    container_name: stitch
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -24,7 +24,7 @@ services:
 
       # Automations, email action. SENDGRID_FROM must be a verified sender in SendGrid.
       # SENDGRID_API_KEY: SG....
-      # SENDGRID_FROM: rivulet@example.com
+      # SENDGRID_FROM: stitch@example.com
 
       # Automations, push action. App token from https://pushover.net/apps/build, user key from your dashboard.
       # PUSHOVER_APP_TOKEN: ...

@@ -30,7 +30,7 @@ async function requestSummary(a: SummaryArticle, stream: boolean): Promise<Respo
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
       "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-      "X-Title": "Rivulet",
+      "X-Title": "Stitch",
     },
     body: JSON.stringify({
       model: getSettings().openrouterModel,

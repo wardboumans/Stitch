@@ -88,7 +88,7 @@ export function Rail({
     <nav className="flex h-full w-14 shrink-0 flex-col items-center bg-rail pb-3 pt-3 md:w-[73px]">
       <div
         className="mb-3 flex h-9 w-9 items-center justify-center"
-        aria-label="Rivulet"
+        aria-label="Stitch"
       >
         <Logo className="h-9 w-9" />
       </div>

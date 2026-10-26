@@ -1,4 +1,4 @@
-import { getDb } from "./db";
+import { getDb, ID_INDEX } from "./db";
 import { htmlToText } from "./html";
 import { newFeedToken } from "./outputFeeds";
 import { getCredential, getSettings } from "./settings";
@@ -17,7 +17,7 @@ export function cleanTagName(input: unknown): string {
 type TagRow = { id: number; name: string; feed_token: string | null; count: number };
 
 const TAG_SQL = `SELECT t.id, t.name, t.feed_token,
-  (SELECT COUNT(*) FROM article_tags at JOIN articles a ON a.id = at.article_id WHERE at.tag_id = t.id AND a.filtered = 0) AS count
+  (SELECT COUNT(*) FROM article_tags at JOIN articles a ${ID_INDEX} ON a.id = at.article_id WHERE at.tag_id = t.id AND a.filtered = 0) AS count
   FROM tags t`;
 
 const toTag = (r: TagRow): Tag => ({ id: r.id, name: r.name, feedToken: r.feed_token, count: r.count });
@@ -132,8 +132,8 @@ export function untagArticle(tagId: number, articleId: number) {
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** AI suggestions per article, so reopening the flyout doesn't call the model again. */
-const g = globalThis as unknown as { __rivuletTagAi?: Map<number, string[]> };
-const aiCache = (g.__rivuletTagAi ??= new Map());
+const g = globalThis as unknown as { __stitchTagAi?: Map<number, string[]> };
+const aiCache = (g.__stitchTagAi ??= new Map());
 
 async function aiSuggestions(title: string, text: string, existing: string[]): Promise<string[]> {
   const key = getCredential("openrouterApiKey");
@@ -144,7 +144,7 @@ async function aiSuggestions(title: string, text: string, existing: string[]): P
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
       "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
-      "X-Title": "Rivulet",
+      "X-Title": "Stitch",
     },
     body: JSON.stringify({
       model: getSettings().openrouterModel,

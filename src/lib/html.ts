@@ -69,7 +69,8 @@ export function htmlToText(html: string): string {
       if (e.startsWith("#")) return String.fromCodePoint(parseInt(e.slice(1), 10));
       return m;
     })
-    .replace(/[ \t\f\v]+/g, " ")
+    // Same as /[ \t\f\v]+/ → " ", but leaves single spaces alone: several times faster on long text.
+    .replace(/[ \t\f\v]{2,}|[\t\f\v]/g, " ")
     .replace(/\s*\n\s*/g, "\n")
     .trim();
 }

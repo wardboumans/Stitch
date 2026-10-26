@@ -1,5 +1,5 @@
 export const USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 Rivulet/1.0";
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 Stitch/1.0";
 
 // Some blogs publish their entire archive with full content in one feed (20+ MB).
 const DEFAULT_MAX_BYTES = 40 * 1024 * 1024;

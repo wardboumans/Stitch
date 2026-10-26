@@ -41,12 +41,15 @@ export function normalizeQuery(input: unknown): MonitorQuery {
   };
 }
 
-/** WHERE clause (over `articles a JOIN feeds f`) selecting the articles a query matches. */
-export function queryWhere(q: MonitorQuery, folderId: number | null): { sql: string; params: unknown[] } {
+/**
+ * WHERE clause (over `articles a JOIN feeds f`) selecting the articles a query matches. `byId` marks
+ * clauses that pick articles by id, which count much faster through ID_INDEX (lib/db.ts).
+ */
+export function queryWhere(q: MonitorQuery, folderId: number | null): { sql: string; params: unknown[]; byId?: boolean } {
   const fts = buildFtsQuery(q);
   if (!fts) return { sql: "0", params: [] };
   const sql = "a.filtered = 0 AND a.id IN (SELECT rowid FROM articles_fts WHERE articles_fts MATCH ?)";
-  return folderId ? { sql: `${sql} AND f.folder_id = ?`, params: [fts, folderId] } : { sql, params: [fts] };
+  return folderId ? { sql: `${sql} AND f.folder_id = ?`, params: [fts, folderId], byId: true } : { sql, params: [fts], byId: true };
 }
 
 function toMonitor(r: MonitorRow): Monitor {

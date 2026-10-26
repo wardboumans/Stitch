@@ -180,9 +180,26 @@ function fieldText(a: RuleArticle, field: RuleField): string {
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// Filters test the same few patterns against thousands of articles: compile each once. null
+// marks an invalid pattern.
+const regexCache = new Map<string, RegExp | null>();
+function cachedRegex(source: string): RegExp | null {
+  let re = regexCache.get(source);
+  if (re === undefined) {
+    try {
+      re = new RegExp(source, "iu");
+    } catch {
+      re = null;
+    }
+    if (regexCache.size >= 500) regexCache.clear();
+    regexCache.set(source, re);
+  }
+  return re;
+}
+
 function contains(hay: string, needle: string, wholeWords: boolean) {
   if (!wholeWords) return hay.toLowerCase().includes(needle.toLowerCase());
-  return new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegex(needle)}(?![\\p{L}\\p{N}])`, "iu").test(hay);
+  return cachedRegex(`(?<![\\p{L}\\p{N}])${escapeRegex(needle)}(?![\\p{L}\\p{N}])`)!.test(hay);
 }
 
 function testCondition(c: RuleCondition, a: RuleArticle, wholeWords: boolean): boolean {
@@ -196,11 +213,7 @@ function testCondition(c: RuleCondition, a: RuleArticle, wholeWords: boolean): b
     case "is":
       return hay.trim().toLowerCase() === value.toLowerCase();
     case "regex":
-      try {
-        return new RegExp(c.value, "iu").test(hay);
-      } catch {
-        return false;
-      }
+      return cachedRegex(c.value)?.test(hay) ?? false;
   }
 }
 
@@ -267,7 +280,7 @@ async function sendEmail(to: string, ruleName: string, articles: RuleArticle[], 
   const text =
     shown.map((a) => `${a.title}\n${a.feed_title}${a.url ? `\n${a.url}` : ""}\n${bodyText(a)}`).join("\n\n---\n\n") +
     (articles.length > shown.length ? `\n\n…and ${articles.length - shown.length} more.` : "") +
-    `\n\nSent by the Rivulet rule “${ruleName}”.`;
+    `\n\nSent by the Stitch rule “${ruleName}”.`;
   const html = `<div style="font-family:system-ui,sans-serif;max-width:640px">
 ${shown
   .map(
@@ -279,14 +292,14 @@ ${shown
   )
   .join("\n")}
 ${articles.length > shown.length ? `<p>…and ${articles.length - shown.length} more.</p>` : ""}
-<p style="color:#9a9a97;font-size:12px">Sent by the Rivulet rule “${esc(ruleName)}”.</p></div>`;
+<p style="color:#9a9a97;font-size:12px">Sent by the Stitch rule “${esc(ruleName)}”.</p></div>`;
 
   const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       personalizations: [{ to: [{ email: to }] }],
-      from: { email: from, name: "Rivulet" },
+      from: { email: from, name: "Stitch" },
       subject,
       content: [
         { type: "text/plain", value: text },
@@ -475,7 +488,7 @@ export async function runRulesForNewArticles(feed: { id: number; folder_id: numb
     const failed = results.filter((r) => !r.ok);
     const status = !failed.length ? "sent" : failed.length === results.length ? "failed" : "partial";
     const error = failed.length ? failed.map((f) => `${f.action}: ${f.error}`).join(" | ") : null;
-    if (error) console.error(`[rivulet] rule "${rule.name}" delivery failed: ${error}`);
+    if (error) console.error(`[stitch] rule "${rule.name}" delivery failed: ${error}`);
     const now = Date.now();
     db.transaction(() => {
       for (const a of matched) log.run(rule.id, a.id, a.title, now, status, error);
@@ -536,12 +549,12 @@ export function purgeRuleMatches() {
 export async function sendTestNotification(channel: "email" | "pushover", to?: string): Promise<void> {
   const sample: RuleArticle = {
     id: 0,
-    title: "Rivulet test notification",
+    title: "Stitch test notification",
     url: null,
     author: null,
     content: null,
-    excerpt: "If you can read this, Rivulet can reach you. Rules will deliver new matching articles here.",
-    feed_title: "Rivulet",
+    excerpt: "If you can read this, Stitch can reach you. Rules will deliver new matching articles here.",
+    feed_title: "Stitch",
     published_at: Date.now(),
   };
   if (channel === "email") {

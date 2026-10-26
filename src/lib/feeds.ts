@@ -5,7 +5,7 @@ import { fetchText, fetchTextWithRetry, isTransientError, isTransientStatus, sle
 import { firstImage, htmlToText, sanitizeHtml } from "./html";
 import { purgeRuleMatches, runRulesForNewArticles } from "./automations";
 import { applyFiltersToArticles, reapplyFilters } from "./filters";
-import { indexArticle } from "./search";
+import { indexArticles } from "./search";
 import { getSettings } from "./settings";
 import { YOUTUBE_FEED_LIKE, isYouTubeFeed, youTubeArticleHtml, youTubeVideoId } from "./youtube";
 import { isGoogleNewsFeed, stripSource } from "./googleNews";
@@ -170,11 +170,11 @@ async function storeItems(
     INSERT OR IGNORE INTO articles (feed_id, guid, url, title, author, content, excerpt, image_url, published_at, created_at)
     VALUES (@feed_id, @guid, @url, @title, @author, @content, @excerpt, @image_url, @published_at, @created_at)
   `);
-  // YouTube videos stored before Rivulet built their player + description have an empty body;
-  // fill it in when they show up in the feed again.
-  const fillVideo = db.prepare(
-    "UPDATE articles SET content = ?, excerpt = ? WHERE feed_id = ? AND guid = ? AND COALESCE(content, '') = ''",
-  );
+  // Most items of a refresh are stored already; spot them before the costly sanitizing.
+  // `empty`: YouTube videos stored before Stitch built their player + description have an empty
+  // body; fill it in when they show up in the feed again.
+  const stored = db.prepare("SELECT id, COALESCE(content, '') = '' AS empty FROM articles WHERE feed_id = ? AND guid = ?");
+  const fillVideo = db.prepare("UPDATE articles SET content = ?, excerpt = ? WHERE id = ?");
 
   // On refresh, items older than the retention window are skipped: purgeOld() deletes read ones,
   // and without their rows INSERT OR IGNORE would re-add them as unread on the next fetch. A new
@@ -183,7 +183,7 @@ async function storeItems(
   const googleNews = isGoogleNewsFeed(feed.feed_url);
 
   let added = 0;
-  const toIndex: { id: number; title: string; content: string }[] = [];
+  const toIndex: { id: number; title: string; text: string }[] = [];
   db.transaction(() => {
     for (const item of parsed.items) {
       const publishedAt = itemDate(item, now);
@@ -195,12 +195,18 @@ async function storeItems(
       const rawHtml = videoId
         ? youTubeArticleHtml(videoId, text(item.mediaGroup?.["media:description"]))
         : text(item["content:encoded"]) || text(item.content) || text(item.summary) || "";
-      const plain = htmlToText(rawHtml);
       // Google News names the publisher separately; show it as the author, not in the title.
       const source = googleNews ? text(item.source) : null;
       const rawTitle = stripSource(text(item.title), source);
       const guid =
         text(item.guid) || text(item.id) || link || crypto.createHash("sha1").update(`${rawTitle ?? ""}|${rawHtml.slice(0, 500)}`).digest("hex");
+      const existing = stored.get(feed.id, guid) as { id: number; empty: number } | undefined;
+      if (existing) {
+        if (videoId && existing.empty && rawHtml)
+          fillVideo.run(sanitizeHtml(rawHtml, link ?? siteUrl), htmlToText(rawHtml).slice(0, 400), existing.id);
+        continue;
+      }
+      const plain = htmlToText(rawHtml);
       const content = rawHtml ? sanitizeHtml(rawHtml, link ?? siteUrl) : "";
       const title = (rawTitle && htmlToText(rawTitle)) || plain.slice(0, 80) || "(untitled)";
       const r = insert.run({
@@ -218,12 +224,10 @@ async function storeItems(
       });
       if (r.changes) {
         added++;
-        toIndex.push({ id: Number(r.lastInsertRowid), title, content });
-      } else if (videoId && content) {
-        fillVideo.run(content, plain.slice(0, 400), feed.id, guid);
+        toIndex.push({ id: Number(r.lastInsertRowid), title, text: content ? htmlToText(content) : "" });
       }
     }
-    for (const a of toIndex) indexArticle(a.id, a.title, a.content);
+    indexArticles(toIndex);
   })();
 
   const ids = toIndex.map((a) => a.id);
@@ -363,7 +367,7 @@ async function fetchFeed(
     ).run(res.etag, res.lastModified, Date.now(), siteUrl ?? null, icon, title ?? null, title ?? null, feed.id);
     if (hadArticles && ids.length) {
       // Delivery problems are logged on the rule, never recorded as a feed error.
-      await runRulesForNewArticles(feed, ids).catch((e) => console.error("[rivulet] rules failed", e));
+      await runRulesForNewArticles(feed, ids).catch((e) => console.error("[stitch] rules failed", e));
     }
     logFetch(feed.id, { ...log, newArticles: added, error: null });
     return added;
@@ -516,4 +520,4 @@ export function purgeOld() {
 // Register the newest refreshAll for the background scheduler. In `next dev` the scheduler keeps
 // the module graph it started with, while route handlers load fresh copies of this file after
 // every edit; each copy overwrites this, so scheduled refreshes always run current code.
-(globalThis as unknown as { __rivuletRefreshAll?: () => Promise<number> }).__rivuletRefreshAll = refreshAll;
+(globalThis as unknown as { __stitchRefreshAll?: () => Promise<number> }).__stitchRefreshAll = refreshAll;

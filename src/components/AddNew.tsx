@@ -134,7 +134,7 @@ export function AddFeedPage({ sidebar, defaultFolderId, onAdded }: AddPageProps)
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold">Website or feed URL</span>
             <input autoFocus required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="e.g. hackaday.com or https://example.com/feed.xml" className={inputClass} />
-            <span className="mt-1.5 block text-xs text-muted">Paste a site address and Rivulet will find its RSS or Atom feed.</span>
+            <span className="mt-1.5 block text-xs text-muted">Paste a site address and Stitch will find its RSS or Atom feed.</span>
           </label>
           {folder.field}
           {err && <p className="text-sm text-danger">{err}</p>}

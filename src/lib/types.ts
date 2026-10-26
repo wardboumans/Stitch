@@ -127,7 +127,8 @@ export type ArticleDetail = ArticleListItem & {
 };
 
 /** `highWater` is the newest article id when the list was loaded; anything above it arrived later. */
-export type ArticlePage = { items: ArticleListItem[]; nextCursor: string | null; unread: number; highWater: number };
+/** `unread` is null on pages after the first (the client keeps the first page's count). */
+export type ArticlePage = { items: ArticleListItem[]; nextCursor: string | null; unread: number | null; highWater: number };
 
 export type NewArticlesCheck = { newCount: number; unread: number };
 

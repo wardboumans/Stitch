@@ -188,7 +188,19 @@ CREATE TABLE feed_fetches (
 CREATE INDEX idx_feed_fetches_feed ON feed_fetches(feed_id, fetched_at);
 `,
   },
+  {
+    version: 6,
+    sql: `
+-- Covers the columns that id lookups (FTS matches, tags) filter and sort on, so counting or paging
+-- them doesn't read whole article rows. SQLite prefers the rowid for those, so queries name it
+-- with INDEXED BY (ID_INDEX).
+CREATE INDEX idx_articles_state ON articles(id, feed_id, is_read, filtered, published_at);
+`,
+  },
 ];
+
+/** Index for queries that select articles by id (`a.id IN (...)`); see migration 6. */
+export const ID_INDEX = "INDEXED BY idx_articles_state";
 
 const BASELINE_VERSION = 1;
 export const SCHEMA_VERSION = MIGRATIONS.reduce((v, m) => Math.max(v, m.version), BASELINE_VERSION);
@@ -198,14 +210,14 @@ function migrate(db: Database.Database) {
   let current = db.pragma("user_version", { simple: true }) as number;
   if (current < BASELINE_VERSION) db.pragma(`user_version = ${(current = BASELINE_VERSION)}`);
   if (current > SCHEMA_VERSION)
-    throw new Error(`Database schema version ${current} is newer than this build supports (${SCHEMA_VERSION}); upgrade Rivulet.`);
+    throw new Error(`Database schema version ${current} is newer than this build supports (${SCHEMA_VERSION}); upgrade Stitch.`);
   for (const m of MIGRATIONS) {
     if (m.version <= current) continue;
     db.transaction(() => {
       db.exec(m.sql);
       db.pragma(`user_version = ${m.version}`);
     })();
-    console.log(`[rivulet] migrated database to schema version ${m.version}`);
+    console.log(`[stitch] migrated database to schema version ${m.version}`);
   }
 }
 

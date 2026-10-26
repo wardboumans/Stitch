@@ -3,9 +3,18 @@ import { htmlToText } from "./html";
 
 /** (Re)index one article's plain text. The FTS table is contentless, so we write rows ourselves. */
 export function indexArticle(id: number, title: string, html: string | null) {
+  indexArticles([{ id, title, text: html ? htmlToText(html) : "" }]);
+}
+
+/** (Re)index articles whose plain text is already at hand. */
+export function indexArticles(rows: { id: number; title: string; text: string }[]) {
   const db = getDb();
-  db.prepare("DELETE FROM articles_fts WHERE rowid = ?").run(id);
-  db.prepare("INSERT INTO articles_fts (rowid, title, body) VALUES (?, ?, ?)").run(id, title, html ? htmlToText(html) : "");
+  const del = db.prepare("DELETE FROM articles_fts WHERE rowid = ?");
+  const ins = db.prepare("INSERT INTO articles_fts (rowid, title, body) VALUES (?, ?, ?)");
+  for (const r of rows) {
+    del.run(r.id);
+    ins.run(r.id, r.title, r.text);
+  }
 }
 
 /** Turn free text into a safe FTS5 query: every term quoted, last term prefix-matched. */

@@ -718,7 +718,7 @@ function NotificationsSection({
             {
               name: "sendgridFrom",
               label: "Sender address",
-              placeholder: "rivulet@yourdomain.com",
+              placeholder: "stitch@yourdomain.com",
               secret: false,
               help: "Must be a verified sender (or on an authenticated domain) in your SendGrid account.",
             },

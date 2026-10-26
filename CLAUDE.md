@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-## Rivulet: things to remember
+## Stitch: things to remember
 
 - **Database schema** (`src/lib/db.ts`): `SCHEMA` is the frozen v1 baseline — never edit it. Every schema change (new tables too) is a new entry appended to `MIGRATIONS` with the next `version`; it runs once in a transaction and is tracked in `PRAGMA user_version`. Never edit or reorder a released migration.
 - **Hidden (filtered) articles:** every article query must go through `scopeWhere` / `queryWhere` (they add `a.filtered = 0`), or filtered articles leak into lists and counts.

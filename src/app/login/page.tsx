@@ -25,7 +25,7 @@ export default function LoginPage() {
     <div className="flex h-full items-center justify-center bg-sidebar px-4">
       <form onSubmit={submit} className="w-full max-w-sm rounded-xl border border-line bg-elevated p-8 shadow-pop">
         <Logo className="mb-4 h-12 w-12" />
-        <h1 className="mb-1 text-xl font-semibold">Rivulet</h1>
+        <h1 className="mb-1 text-xl font-semibold">Stitch</h1>
         <p className="mb-6 text-sm text-muted">Enter your password to continue.</p>
         <input type="password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className={inputClass} />
         {error && <p className="mt-2 text-sm text-danger">{error}</p>}

@@ -1,4 +1,4 @@
-import { getDb } from "./db";
+import { getDb, ID_INDEX } from "./db";
 import { feedAutomations, isRefreshing } from "./feeds";
 import {
   buildFtsQuery,
@@ -23,7 +23,8 @@ import type {
   SidebarFolder,
 } from "./types";
 
-type Where = { sql: string; params: unknown[] };
+/** `byId`: the clause selects articles by id (FTS matches, tags), so it goes through ID_INDEX. */
+type Where = { sql: string; params: unknown[]; byId?: boolean };
 
 export function parseScope(
   params: URLSearchParams | Record<string, unknown>,
@@ -215,20 +216,35 @@ export function feedProperties(id: number): FeedProperties | null {
   };
 }
 
+const articlesFrom = (where: Where) => `articles a ${where.byId ? `${ID_INDEX} ` : ""}JOIN feeds f ON f.id = a.feed_id`;
+
 function countWhere(where: Where, unreadOnly: boolean): number {
   return (
     getDb()
       .prepare(
-        `SELECT COUNT(*) AS n FROM articles a JOIN feeds f ON f.id = a.feed_id WHERE ${where.sql}${unreadOnly ? " AND a.is_read = 0" : ""}`,
+        `SELECT COUNT(*) AS n FROM ${articlesFrom(where)} WHERE ${where.sql}${unreadOnly ? " AND a.is_read = 0" : ""}`,
       )
       .get(...where.params) as { n: number }
   ).n;
 }
 
+/**
+ * One page of list rows. Id-selected scopes pick the page's ids through the covering index first,
+ * so only the rows on the page are read, not every match.
+ */
+function selectRows(where: Where, order: string, limit: number): ListRow[] {
+  const sql = where.byId
+    ? `SELECT ${LIST_COLUMNS} FROM articles a JOIN feeds f ON f.id = a.feed_id WHERE a.id IN (
+         SELECT a.id FROM ${articlesFrom(where)} WHERE ${where.sql} ORDER BY ${order} LIMIT ?
+       ) ORDER BY ${order}`
+    : `SELECT ${LIST_COLUMNS} FROM ${articlesFrom(where)} WHERE ${where.sql} ORDER BY ${order} LIMIT ?`;
+  return getDb().prepare(sql).all(...where.params, limit) as ListRow[];
+}
+
 /** WHERE clause + params selecting the visible (not filtered) articles in a scope. */
 export function scopeWhere(scope: Scope): Where {
   const w = scopeWhereRaw(scope);
-  return { sql: `(${w.sql}) AND a.filtered = 0`, params: w.params };
+  return { sql: `(${w.sql}) AND a.filtered = 0`, params: w.params, byId: w.byId };
 }
 
 function scopeWhereRaw(scope: Scope): Where {
@@ -240,11 +256,12 @@ function scopeWhereRaw(scope: Scope): Where {
     case "archive":
       return { sql: "a.archived_at IS NOT NULL", params: [] };
     case "tagged":
-      return { sql: "a.id IN (SELECT article_id FROM article_tags)", params: [] };
+      return { sql: "a.id IN (SELECT article_id FROM article_tags)", params: [], byId: true };
     case "tag":
       return {
         sql: "a.id IN (SELECT article_id FROM article_tags WHERE tag_id = ?)",
         params: [scope.id],
+        byId: true,
       };
     case "feed":
       return { sql: "a.feed_id = ?", params: [scope.id] };
@@ -260,6 +277,7 @@ function scopeWhereRaw(scope: Scope): Where {
         ? {
             sql: "a.id IN (SELECT rowid FROM articles_fts WHERE articles_fts MATCH ?)",
             params: [q],
+            byId: true,
           }
         : { sql: "0", params: [] };
     }
@@ -336,11 +354,11 @@ export function listArticles(
     params.push(k, k, id);
   }
 
-  const rows = db
-    .prepare(
-      `SELECT ${LIST_COLUMNS} FROM articles a JOIN feeds f ON f.id = a.feed_id WHERE ${clauses.join(" AND ")} ORDER BY ${key} ${dir}, a.id ${dir} LIMIT ?`,
-    )
-    .all(...params, limit + 1) as ListRow[];
+  const rows = selectRows(
+    { sql: clauses.join(" AND "), params, byId: where.byId },
+    `${key} ${dir}, a.id ${dir}`,
+    limit + 1,
+  );
 
   const hasMore = rows.length > limit;
   const page = rows.slice(0, limit);
@@ -361,7 +379,8 @@ export function listArticles(
   return {
     items: page.map(toItem),
     nextCursor: hasMore && last ? `${lastKey}:${last.id}` : null,
-    unread: countWhere(where, true),
+    // Further pages keep the count from the first; the new-articles check keeps it current.
+    unread: opts.cursor ? null : countWhere(where, true),
     highWater,
   };
 }
@@ -392,11 +411,7 @@ export function previewQuery(
   folderId: number | null,
 ): MonitorPreview {
   const where = queryWhere(query, folderId);
-  const rows = getDb()
-    .prepare(
-      `SELECT ${LIST_COLUMNS} FROM articles a JOIN feeds f ON f.id = a.feed_id WHERE ${where.sql} ORDER BY a.published_at DESC, a.id DESC LIMIT 20`,
-    )
-    .all(...where.params) as ListRow[];
+  const rows = selectRows(where, "a.published_at DESC, a.id DESC", 20);
   return {
     count: countWhere(where, false),
     items: rows.map(toItem),
