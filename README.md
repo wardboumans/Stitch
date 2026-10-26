@@ -1,8 +1,8 @@
-# Rivulet
+# Stitch
 
 A self-hosted, single-user RSS reader with a three-pane layout. Built with Next.js 16 and SQLite.
 
-![Rivulet: feeds and folders in the sidebar, the article list, and the reader](screenshot.png)
+![Stitch: feeds and folders in the sidebar, the article list, and the reader](screenshot.png)
 
 ## Features
 
@@ -60,7 +60,7 @@ Anyone with the link can read the feed; **New link** in the dialog replaces it. 
 
 ## Docker
 
-Images are published to `ghcr.io/wardboumans/rivulet`:
+Images are published to `ghcr.io/wardboumans/stitch`:
 
 | Tag             | Built from                     |
 | --------------- | ------------------------------ |
@@ -72,21 +72,21 @@ Images are published to `ghcr.io/wardboumans/rivulet`:
 To try it out (nothing is kept when you stop it):
 
 ```bash
-docker run --rm -p 3000:3000 ghcr.io/wardboumans/rivulet:latest
+docker run --rm -p 3000:3000 ghcr.io/wardboumans/stitch:latest
 ```
 
 Or with plain Docker:
 
 ```bash
-docker run -d --name rivulet --restart unless-stopped \
+docker run -d --name stitch --restart unless-stopped \
   -p 3000:3000 \
   -v ./data:/data \
-  ghcr.io/wardboumans/rivulet:latest
+  ghcr.io/wardboumans/stitch:latest
 ```
 
 The database lives in `/data` inside the container, so mount a volume there (`./data` on the host above) or you lose your feeds when the container is replaced. API keys can be set as environment variables or added later under **Settings**.
 
-To update: `docker compose pull && docker compose up -d`. To build the image from this checkout instead: `docker build -t rivulet .`
+To update: `docker compose pull && docker compose up -d`. To build the image from this checkout instead: `docker build -t stitch .`
 
 ## Configuration
 
