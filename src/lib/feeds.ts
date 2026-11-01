@@ -45,6 +45,7 @@ export type FeedRow = {
   site_url: string | null;
   icon_url: string | null;
   icon_checked: number;
+  auto_full_text: number;
   etag: string | null;
   last_modified: string | null;
   last_fetched_at: number | null;

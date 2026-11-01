@@ -468,7 +468,8 @@ function GeneralSection({
               </span>
               <span className="block text-xs text-muted">
                 When a feed only provides a short teaser, load the article from
-                the website when you open it.
+                the website when you open it. When off, each feed’s Auto fetch
+                article option controls this instead.
               </span>
             </span>
           </label>

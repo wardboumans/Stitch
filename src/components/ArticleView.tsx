@@ -135,7 +135,7 @@ export function ArticleView({
       // The feed only gave us a teaser: pull the full article automatically. YouTube items are
       // a player plus description; the watch page has nothing more to extract. Google News
       // links only redirect in a browser, so there's nothing to fetch from the server.
-      else if (autoFullText && d.url && d.contentLength < 600 && !isVideo(d.content) && !isGoogleNewsLink(d.url))
+      else if ((autoFullText || d.feedAutoFullText) && d.url && d.contentLength < 600 && !isVideo(d.content) && !isGoogleNewsLink(d.url))
         loadFullText(d.id, () => cancelled);
     });
     return () => {

@@ -197,6 +197,13 @@ CREATE INDEX idx_feed_fetches_feed ON feed_fetches(feed_id, fetched_at);
 CREATE INDEX idx_articles_state ON articles(id, feed_id, is_read, filtered, published_at);
 `,
   },
+  {
+    version: 7,
+    sql: `
+-- Per-feed opt-in; the global automatic full-text setting also enables it for every feed.
+ALTER TABLE feeds ADD COLUMN auto_full_text INTEGER NOT NULL DEFAULT 0 CHECK (auto_full_text IN (0, 1));
+`,
+  },
 ];
 
 /** Index for queries that select articles by id (`a.id IN (...)`); see migration 6. */

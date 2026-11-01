@@ -145,7 +145,7 @@ export function feedProperties(id: number): FeedProperties | null {
   const db = getDb();
   const f = db
     .prepare(
-      "SELECT id, folder_id, title, feed_url, site_url, icon_url, created_at, last_fetched_at, last_error FROM feeds WHERE id = ?",
+      "SELECT id, folder_id, title, feed_url, site_url, icon_url, created_at, last_fetched_at, last_error, auto_full_text FROM feeds WHERE id = ?",
     )
     .get(id) as
     | {
@@ -158,6 +158,7 @@ export function feedProperties(id: number): FeedProperties | null {
         created_at: number;
         last_fetched_at: number | null;
         last_error: string | null;
+        auto_full_text: number;
       }
     | undefined;
   if (!f) return null;
@@ -211,6 +212,7 @@ export function feedProperties(id: number): FeedProperties | null {
     lastPostAt: stats.last,
     // Same clamp as the scheduler (lib/scheduler.ts).
     refreshIntervalMinutes: Math.max(5, getSettings().refreshIntervalMinutes || 30),
+    autoFullText: !!f.auto_full_text,
     automations: feedAutomations(id),
     log,
   };
@@ -422,12 +424,13 @@ export function previewQuery(
 export function getArticle(id: number): ArticleDetail | null {
   const r = getDb()
     .prepare(
-      `SELECT ${LIST_COLUMNS}, f.site_url, a.content, a.full_content, a.summary
+      `SELECT ${LIST_COLUMNS}, f.site_url, f.auto_full_text, a.content, a.full_content, a.summary
        FROM articles a JOIN feeds f ON f.id = a.feed_id WHERE a.id = ?`,
     )
     .get(id) as
     | (ListRow & {
         site_url: string | null;
+        auto_full_text: number;
         content: string | null;
         full_content: string | null;
         summary: string | null;
@@ -438,6 +441,7 @@ export function getArticle(id: number): ArticleDetail | null {
   return {
     ...toItem(r),
     siteUrl: r.site_url,
+    feedAutoFullText: !!r.auto_full_text,
     content,
     fullContent: r.full_content,
     summary: r.summary,

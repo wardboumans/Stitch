@@ -107,6 +107,7 @@ export function FeedPropertiesDialog({
   const [err, setErr] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [savingFullText, setSavingFullText] = useState(false);
 
   const load = () =>
     api<FeedProperties>(`/api/feeds/${feedId}/properties`)
@@ -129,6 +130,18 @@ export function FeedPropertiesDialog({
     const title = editing?.trim();
     setEditing(null);
     if (title && title !== props?.title) await patch({ title }).catch(() => {});
+  }
+
+  async function saveAutoFullText(autoFullText: boolean) {
+    setSavingFullText(true);
+    setErr("");
+    try {
+      await patch({ autoFullText });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not save full article setting");
+    } finally {
+      setSavingFullText(false);
+    }
   }
 
   async function refresh() {
@@ -268,6 +281,21 @@ export function FeedPropertiesDialog({
             <Field label="Update interval" hint="Every feed refreshes on the interval set in Settings.">
               Every {props.refreshIntervalMinutes} min
             </Field>
+            <label className="flex items-start gap-3 border-b border-line py-3">
+              <input
+                type="checkbox"
+                checked={props.autoFullText}
+                disabled={savingFullText}
+                onChange={(e) => saveAutoFullText(e.target.checked)}
+                className="mt-1 h-4 w-4 accent-[var(--accent)] disabled:opacity-50"
+              />
+              <span className="text-sm">
+                <span className="font-semibold">Auto fetch article</span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  Load the full article when you open a short teaser. The global setting enables this for all feeds.
+                </span>
+              </span>
+            </label>
             <Field
               label="Last refreshed"
               action={

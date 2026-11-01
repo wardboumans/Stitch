@@ -12,10 +12,14 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/feeds/[id]">) {
 export async function PATCH(req: Request, ctx: RouteContext<"/api/feeds/[id]">) {
   const id = intParam((await ctx.params).id);
   if (!id) return error("Invalid id");
-  const patch = await body<{ title: string; folderId: number | null }>(req);
+  const patch = await body<{ title: string; folderId: number | null; autoFullText: boolean }>(req);
+  if (patch.autoFullText !== undefined && typeof patch.autoFullText !== "boolean")
+    return error("autoFullText must be a boolean");
   const db = getDb();
   if (patch.title !== undefined && patch.title.trim()) db.prepare("UPDATE feeds SET title = ? WHERE id = ?").run(patch.title.trim(), id);
   if (patch.folderId !== undefined) db.prepare("UPDATE feeds SET folder_id = ? WHERE id = ?").run(patch.folderId, id);
+  if (patch.autoFullText !== undefined)
+    db.prepare("UPDATE feeds SET auto_full_text = ? WHERE id = ?").run(Number(patch.autoFullText), id);
   return json({ ok: true });
 }
 
