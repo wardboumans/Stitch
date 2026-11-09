@@ -204,6 +204,13 @@ CREATE INDEX idx_articles_state ON articles(id, feed_id, is_read, filtered, publ
 ALTER TABLE feeds ADD COLUMN auto_full_text INTEGER NOT NULL DEFAULT 0 CHECK (auto_full_text IN (0, 1));
 `,
   },
+  {
+    version: 8,
+    sql: `
+-- Per-feed opt-in: generate an AI summary when an article without one is opened.
+ALTER TABLE feeds ADD COLUMN auto_summary INTEGER NOT NULL DEFAULT 0 CHECK (auto_summary IN (0, 1));
+`,
+  },
 ];
 
 /** Index for queries that select articles by id (`a.id IN (...)`); see migration 6. */
