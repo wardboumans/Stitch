@@ -74,6 +74,8 @@ export type FeedProperties = {
   postsThisWeek: number;
   lastPostAt: number | null;
   refreshIntervalMinutes: number;
+  autoFullText: boolean;
+  autoSummary: boolean;
   automations: LinkedAutomations;
   log: FeedFetch[];
 };
@@ -119,6 +121,8 @@ export type ArticleListItem = {
 
 export type ArticleDetail = ArticleListItem & {
   siteUrl: string | null;
+  feedAutoFullText: boolean;
+  feedAutoSummary: boolean;
   content: string;
   fullContent: string | null;
   summary: string | null;

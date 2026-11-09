@@ -107,6 +107,7 @@ export function FeedPropertiesDialog({
   const [err, setErr] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [savingToggle, setSavingToggle] = useState(false);
 
   const load = () =>
     api<FeedProperties>(`/api/feeds/${feedId}/properties`)
@@ -129,6 +130,18 @@ export function FeedPropertiesDialog({
     const title = editing?.trim();
     setEditing(null);
     if (title && title !== props?.title) await patch({ title }).catch(() => {});
+  }
+
+  async function saveToggle(key: "autoFullText" | "autoSummary", value: boolean) {
+    setSavingToggle(true);
+    setErr("");
+    try {
+      await patch({ [key]: value });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not save setting");
+    } finally {
+      setSavingToggle(false);
+    }
   }
 
   async function refresh() {
@@ -268,6 +281,36 @@ export function FeedPropertiesDialog({
             <Field label="Update interval" hint="Every feed refreshes on the interval set in Settings.">
               Every {props.refreshIntervalMinutes} min
             </Field>
+            <label className="flex items-start gap-3 border-b border-line py-3">
+              <input
+                type="checkbox"
+                checked={props.autoFullText}
+                disabled={savingToggle}
+                onChange={(e) => saveToggle("autoFullText", e.target.checked)}
+                className="mt-1 h-4 w-4 accent-[var(--accent)] disabled:opacity-50"
+              />
+              <span className="text-sm">
+                <span className="font-semibold">Auto fetch article</span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  Load the full article when you open a short teaser. The global setting enables this for all feeds.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 border-b border-line py-3">
+              <input
+                type="checkbox"
+                checked={props.autoSummary}
+                disabled={savingToggle}
+                onChange={(e) => saveToggle("autoSummary", e.target.checked)}
+                className="mt-1 h-4 w-4 accent-[var(--accent)] disabled:opacity-50"
+              />
+              <span className="text-sm">
+                <span className="font-semibold">Auto summarize article</span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  Generate an AI summary when you open an article that doesn’t have one yet. Needs an OpenRouter API key.
+                </span>
+              </span>
+            </label>
             <Field
               label="Last refreshed"
               action={

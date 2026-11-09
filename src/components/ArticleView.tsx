@@ -123,6 +123,7 @@ export function ArticleView({
 
   const id = item.id;
   const autoFullText = settings?.autoFullText ?? true;
+  const hasKey = settings?.hasOpenRouterKey ?? false;
 
   // The parent keys this component by article id, so state starts fresh for each article.
   useEffect(() => {
@@ -135,8 +136,10 @@ export function ArticleView({
       // The feed only gave us a teaser: pull the full article automatically. YouTube items are
       // a player plus description; the watch page has nothing more to extract. Google News
       // links only redirect in a browser, so there's nothing to fetch from the server.
-      else if (autoFullText && d.url && d.contentLength < 600 && !isVideo(d.content) && !isGoogleNewsLink(d.url))
+      else if ((autoFullText || d.feedAutoFullText) && d.url && d.contentLength < 600 && !isVideo(d.content) && !isGoogleNewsLink(d.url))
         loadFullText(d.id, () => cancelled);
+      // Per-feed auto summary, independent of the full-text option above.
+      if (d.feedAutoSummary && !d.summary && hasKey) summarize(d.id);
     });
     return () => {
       cancelled = true;
@@ -190,15 +193,15 @@ export function ArticleView({
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  async function summarize() {
-    if (!detail) return;
+  async function summarize(articleId = detail?.id) {
+    if (!articleId) return;
     summaryAbort.current?.abort();
     const ctrl = new AbortController();
     summaryAbort.current = ctrl;
     setSummary("");
     setSummaryState("loading");
     try {
-      const res = await fetch(`/api/articles/${detail.id}/summarize`, {
+      const res = await fetch(`/api/articles/${articleId}/summarize`, {
         method: "POST",
         signal: ctrl.signal,
       });
@@ -251,7 +254,6 @@ export function ArticleView({
     : "";
   const showHero = !!item.imageUrl && !!detail && !/<(img|iframe)\b/i.test(html);
   const site = hostname(detail?.siteUrl ?? item.url);
-  const hasKey = settings?.hasOpenRouterKey ?? false;
 
   return (
     <article className="relative flex h-full min-w-0 flex-col bg-bg">
@@ -454,7 +456,7 @@ export function ArticleView({
                     type="button"
                     title="Regenerate summary"
                     aria-label="Regenerate summary"
-                    onClick={summarize}
+                    onClick={() => summarize()}
                     disabled={summaryState === "loading"}
                     className="rounded p-1 text-muted hover:bg-hover hover:text-fg disabled:opacity-40"
                   >
